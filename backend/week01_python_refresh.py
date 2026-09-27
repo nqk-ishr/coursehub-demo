@@ -20,16 +20,13 @@ courses = [
 enrollments = [
     {"student_id": "22000001", "course_code": "INT2204"}
 ]
-for course in courses:
-    remaining = course["capacity"] - course["enrolled"]
-    print(course["code"], "- con", remaining, "cho")
+
 
 def find_course(course_code):
     for course in courses:
         if course["code"] == course_code:
             return course
     return None
-print(find_course("INT2204"))
 
 def can_enroll(student_id, course_code):
     course = find_course(course_code)
@@ -43,13 +40,6 @@ def can_enroll(student_id, course_code):
     if duplicated:
         return False, "Sinh vien da dang ky hoc phan nay"
     return True, "Co the dang ky"
-print(can_enroll("22000002", "INT2204"))
-
-try:
-    limit = int(input("Nhap so luong hoc phan muon hien thi: "))
-    print(courses[:limit])
-except ValueError:
-    print("So luong phai la so nguyen")
 
 def search_courses(keyword):
     normalized = keyword.strip().lower()
@@ -60,4 +50,31 @@ def search_courses(keyword):
         if normalized in code or normalized in name:
             results.append(course)
     return results
-print(search_courses("web"))
+
+def enroll_student(student_id, course_code):
+    student_exist = False
+    for i in students:
+        if i["id"] == student_id:
+            student_exist = True
+            break
+    if not student_exist:
+        print("sinh vien khong ton tai")
+        return
+    
+    flag, status = can_enroll(student_id, course_code)
+    if flag == True:
+        enrollments.append({"student_id": student_id, "course_code": course_code})
+        for i in courses:
+            if i["code"] == course_code:
+                i["enrolled"] += 1
+                print("Dang ky thanh cong")
+                return
+    else:
+        print(status)
+        return
+
+enroll_student("22000001", "INT2204")
+enroll_student("22000002", "INT2204")
+enroll_student("22000002", "INT2205")
+enroll_student("22000002", "INT2206")
+enroll_student("22000003", "INT2204")
