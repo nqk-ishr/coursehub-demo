@@ -389,3 +389,62 @@ def list_courses(
         rows = connection.execute(text(sql), parameters).mappings().all()
 
     return [dict(row) for row in rows]
+
+# Bài 1 tuần 4
+@app.get("/enrollment-events")
+def list_enrollment_events(
+    student_id: str | None = Query(default=None, min_length=1),
+    event_type: str | None = Query(default=None),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100),
+) -> list[dict[str, object]]:
+    sql = """
+        SELECT id, student_id, class_section_id, event_type,
+               source, dataset, occurred_at
+        FROM enrollment_events
+        WHERE dataset = 'demo'
+    """
+    parameters: dict[str, object] = {}
+
+    if student_id is not None:
+        sql += " AND student_id = :student_id"
+        parameters["student_id"] = student_id
+    if event_type is not None:
+        event_type = event_type.upper()
+        if event_type not in ("CREATED", "CANCELLED"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="event_type phai la CREATED hoac CANCELLED",
+            )
+        sql += " AND event_type = :event_type"
+        parameters["event_type"] = event_type
+
+    sql += " ORDER BY occurred_at DESC, id DESC LIMIT :limit OFFSET :skip"
+    parameters["limit"] = limit
+    parameters["skip"] = skip
+
+    with engine.connect() as connection:
+        rows = connection.execute(text(sql), parameters).mappings().all()
+    return [dict(row) for row in rows]
+
+# Bài 2 tuần 4
+@app.post("/demo/enrollment-rollback", status_code=201)
+def demo_rollback(payload: EnrollmentCreate) -> dict[str, str]:
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text("INSERT INTO enrollments (student_id, class_section_id) "
+                     "VALUES (:student_id, :class_section_id)"),
+                {"student_id": payload.student_id,
+                 "class_section_id": payload.class_section_id},
+            )
+            connection.execute(
+                text("INSERT INTO enrollment_events "
+                     "(student_id, class_section_id, event_type, source, dataset) "
+                     "VALUES (:student_id, :class_section_id, 'INVALID', 'api', 'demo')"),
+                {"student_id": payload.student_id,
+                 "class_section_id": payload.class_section_id},
+            )
+    except IntegrityError as exc:
+        raise HTTPException(409, "Rollback demo: event khong hop le") from exc
+    return {"message": "khong bao gio toi day"}
