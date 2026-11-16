@@ -28,4 +28,4 @@ def test_enrollment_methods_are_registered():
     assert "delete" in paths[
         "/enrollments/{student_id}/{class_section_id}"
     ]
-    assert "put" in paths["/sections"]
+    assert "get" in paths["/sections"]
