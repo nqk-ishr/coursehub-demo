@@ -1,3 +1,8 @@
 .venv/
 .env
 __pycache__/
+.env.local
+node_modules/
+dist/
+.env.docker
+.pytest_cache/
